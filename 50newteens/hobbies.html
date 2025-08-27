@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explorador de Hobbies para Mayores de 50</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Chosen Palette: Calm Harmony (Warm neutrals with muted teal/orange accents) -->
+    <!-- Application Structure Plan: A single-page application with a top navigation bar. The core is an interactive 'Hobby Explorer' with filter buttons (Category, Cost, Mobility, Social) that dynamically show/hide hobby cards. A 'Visualizations' section uses Chart.js to summarize the hobby landscape (distribution by category, cost breakdown). A final 'Resources' section uses an accordion to present external links neatly. This structure prioritizes user-driven discovery and filtering over a static list, making the large amount of information manageable and engaging. -->
+    <!-- Visualization & Content Choices: 1. Hobby List -> Goal: Explore/Filter -> Method: Interactive Cards -> Interaction: JS filtering -> Justification: Allows users to find relevant hobbies quickly from a large dataset. 2. Hobby Categories -> Goal: Summarize -> Method: Polar Area Chart (Chart.js/Canvas) -> Interaction: Hover tooltips -> Justification: Visually engaging summary of the balance between hobby types. 3. Hobby Costs -> Goal: Compare -> Method: Bar Chart (Chart.js/Canvas) -> Interaction: Hover tooltips -> Justification: Clear, direct comparison of affordability. 4. Resources List -> Goal: Organize -> Method: HTML/JS Accordion -> Interaction: Click to expand -> Justification: Prevents information overload and keeps the UI clean. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fdfcfb; /* Warm neutral background */
+            color: #374151;
+        }
+        /* Original nav-link styles from hobbies_spa_es, now for mobile menu only */
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #0d9488; /* Muted Teal */
+            border-bottom-color: #0d9488;
+        }
+
+        /* Styles from plantilla.html for header */
+        .logo-text {
+            font-family: 'Pacifico', cursive;
+            color: #ff7f50; /* Orange accent */
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease;
+        }
+        .logo-text:hover {
+            transform: scale(1.05);
+        }
+        .header-nav-link {
+            color: #e5e7eb; /* Light gray for contrast on dark header */
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+        .header-nav-link:hover {
+            color: #ff7f50; /* Orange accent on hover */
+        }
+
+        .filter-btn {
+            transition: all 0.3s;
+        }
+        .filter-btn.active {
+            background-color: #0d9488;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .hobby-card {
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: flex;
+            flex-direction: column;
+        }
+        .hobby-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out;
+        }
+        .accordion-button.open .accordion-arrow {
+            transform: rotate(180deg);
+        }
+        .accordion-arrow {
+            transition: transform 0.3s;
+        }
+    </style>
+</head>
+<body class="bg-stone-50">
+
+    <!-- Header, modified with 50NewTeens brand identity and dark background -->
+    <header class="bg-[#0d1e3a] shadow-md py-4 sticky top-0 z-50">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="#" class="flex items-center">
+                <!-- Text-based logo using Pacifico font -->
+                <span class="logo-text">50NewTeens</span>
+            </a>
+            <div class="hidden md:flex items-center space-x-4">
+                <a href="#explorer" class="header-nav-link">Explorador</a>
+                <a href="#visuals" class="header-nav-link">Visualizaciones</a>
+                <a href="#resources" class="header-nav-link">Recursos</a>
+                <!--<a href="#" class="bg-[#ff7f50] text-white hover:bg-[#0d47a1] px-4 py-2 rounded-full transition-colors">Contacto</a>-->
+            </div>
+            <div class="md:hidden">
+                <select id="mobile-nav" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500">
+                    <option value="#explorer">Explorador</option>
+                    <option value="#visuals">Visualizaciones</option>
+                    <option value="#resources">Recursos</option>
+                </select>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-6 py-12">
+
+        <section id="hero" class="text-center mb-16">
+            <h2 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4">Descubre tu Próxima Pasión</h2>
+            <p class="text-lg text-gray-600 max-w-3xl mx-auto">La vida después de los 50 es una oportunidad excepcional para explorar nuevos intereses. Utiliza esta herramienta interactiva para encontrar aficiones adaptadas a tus gustos, capacidades y estilo de vida.</p>
+        </section>
+
+        <section id="explorer" class="mb-16 scroll-mt-20">
+            <h3 class="text-3xl font-bold text-center mb-2 text-gray-800">Explorador Interactivo de Hobbies</h3>
+            <p class="text-center text-gray-600 mb-8">Usa los filtros para encontrar la actividad perfecta para ti.</p>
+            
+            <div id="filters" class="flex flex-wrap justify-center gap-4 mb-10">
+                <div class="w-full md:w-auto">
+                    <span class="font-semibold text-gray-700 mr-3">Categoría:</span>
+                    <div class="inline-flex rounded-md shadow-sm" role="group" data-filter-group="category">
+                        <button type="button" class="filter-btn active px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-l-lg hover:bg-gray-100 focus:z-10 focus:ring-2 focus:ring-teal-500" data-filter="all">Todos</button>
+                        <button type="button" class="filter-btn px-4 py-2 text-sm font-medium text-gray-900 bg-white border-t border-b border-gray-200 hover:bg-gray-100 focus:z-10 focus:ring-2 focus:ring-teal-500" data-filter="physical">Físicos</button>
+                        <button type="button" class="filter-btn px-4 py-2 text-sm font-medium text-gray-900 bg-white border-t border-b border-gray-200 hover:bg-gray-100 focus:z-10 focus:ring-2 focus:ring-teal-500" data-filter="creative">Creativos</button>
+                        <button type="button" class="filter-btn px-4 py-2 text-sm font-medium text-gray-900 bg-white border-t border-b border-gray-200 hover:bg-gray-100 focus:z-10 focus:ring-2 focus:ring-teal-500" data-filter="mental">Mentales</button>
+                        <button type="button" class="filter-btn px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-r-md hover:bg-gray-100 focus:z-10 focus:ring-2 focus:ring-teal-500" data-filter="social">Sociales</button>
+                    </div>
+                </div>
+                <div class="w-full md:w-auto">
+                    <span class="font-semibold text-gray-700 mr-3">Coste:</span>
+                     <div class="inline-flex rounded-md shadow-sm" role="group" data-filter-group="cost">
+                        <button type="button" class="filter-btn active px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-l-lg hover:bg-gray-100 focus:z-10 focus:ring-2 focus:ring-teal-500" data-filter="all">Todos</button>
+                        <button type="button" class="filter-btn px-4 py-2 text-sm font-medium text-gray-900 bg-white border-t border-b border-gray-200 hover:bg-gray-100 focus:z-10 focus:ring-2 focus:ring-teal-500" data-filter="low">Bajo</button>
+                        <button type="button" class="filter-btn px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-r-md hover:bg-gray-100 focus:z-10 focus:ring-2 focus:ring-teal-500" data-filter="investment">Inversión</button>
+                    </div>
+                </div>
+                 <div class="w-full md:w-auto">
+                    <span class="font-semibold text-gray-700 mr-3">Movilidad:</span>
+                     <div class="inline-flex rounded-md shadow-sm" role="group" data-filter-group="mobility">
+                        <button type="button" class="filter-btn active px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-l-lg hover:bg-gray-100 focus:z-10 focus:ring-2 focus:ring-teal-500" data-filter="all">Todas</button>
+                        <button type="button" class="filter-btn px-4 py-2 text-sm font-medium text-gray-900 bg-white border-t border-b border-gray-200 hover:bg-gray-100 focus:z-10 focus:ring-2 focus:ring-teal-500" data-filter="adaptable">Adaptable</button>
+                        <button type="button" class="filter-btn px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-r-md hover:bg-gray-100 focus:z-10 focus:ring-2 focus:ring-teal-500" data-filter="active">Activa</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="hobby-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            </div>
+            <p id="no-results" class="text-center text-gray-500 mt-8 hidden">No se encontraron hobbies que coincidan con los filtros seleccionados.</p>
+        </section>
+
+        <section id="visuals" class="mb-16 scroll-mt-20">
+            <h3 class="text-3xl font-bold text-center mb-8 text-gray-800">Visualizaciones</h3>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h4 class="text-xl font-semibold text-center mb-4">Distribución de Hobbies por Categoría</h4>
+                    <p class="text-center text-gray-600 text-sm mb-4">Muestra el balance entre los diferentes tipos de actividades disponibles.</p>
+                    <div class="chart-container">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h4 class="text-xl font-semibold text-center mb-4">Análisis de Coste</h4>
+                    <p class="text-center text-gray-600 text-sm mb-4">Compara la cantidad de hobbies que requieren poca o ninguna inversión frente a los que sí la necesitan.</p>
+                    <div class="chart-container">
+                        <canvas id="costChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="resources" class="scroll-mt-20">
+            <h3 class="text-3xl font-bold text-center mb-8 text-gray-800">Recursos y Comunidades en España</h3>
+            <p class="text-center text-gray-600 mb-8 max-w-3xl mx-auto">Conectar con otros enriquece la experiencia. Aquí tienes una lista de plataformas y asociaciones donde puedes encontrar grupos, talleres y actividades.</p>
+            <div id="accordion-container" class="max-w-4xl mx-auto space-y-4">
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer, modified with Caxurma branding -->
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center text-center md:text-left">
+            <img src="caxurma_negatiu.png" alt="Logo de Caxurma" class="h-28 header-logo mb-4 md:mb-0">
+            <div class="mb-4 md:mb-0">
+                <p>&copy; 2025 Caxurma. Tots els drets reservats.</p>
+            </div>
+            <div class="flex space-x-4">
+                <!--<a href="#" class="text-gray-400 hover:text-white transition-colors"><i class="fab fa-facebook-f"></i></a>
+                <a href="#" class="text-gray-400 hover:text-white transition-colors"><i class="fab fa-twitter"></i></a>
+                <a href="#" class="text-gray-400 hover:text-white transition-colors"><i class="fab fa-linkedin-in"></i></a>
+                <a href="#" class="text-gray-400 hover:text-white transition-colors"><i class="fab fa-instagram"></i></a>-->
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const hobbiesData = [
+            { name: 'Jardinería', description: 'Relajante y fructífero. Ideal para la flexibilidad y la concentración.', category: 'physical', cost: 'low', mobility: 'adaptable' },
+            { name: 'Marcha Nórdica', description: 'Combina ejercicio y naturaleza. Accesible y de bajo coste inicial.', category: 'physical', cost: 'low', mobility: 'active' },
+            { name: 'Senderismo', description: 'Explora la naturaleza mientras te mantienes activo. Requiere calzado adecuado.', category: 'physical', cost: 'low', mobility: 'active' },
+            { name: 'Ciclismo', description: 'Excelente para la salud cardiovascular. Adapta la intensidad a tu ritmo.', category: 'physical', cost: 'investment', mobility: 'active' },
+            { name: 'Caminar', description: 'Fácil, económico y realizable en cualquier lugar. Mejora la circulación.', category: 'physical', cost: 'low', mobility: 'active' },
+            { name: 'Yoga', description: 'Mejora flexibilidad, equilibrio y relajación. Adaptable a cualquier edad.', category: 'physical', cost: 'low', mobility: 'adaptable' },
+            { name: 'Tai-Chi', description: 'Movimientos suaves para el equilibrio y la relajación física y mental.', category: 'physical', cost: 'low', mobility: 'adaptable' },
+            { name: 'Pilates', description: 'Fortalece el core y mejora la postura con ejercicios de bajo impacto.', category: 'physical', cost: 'low', mobility: 'adaptable' },
+            { name: 'Natación', description: 'Deporte completo y de bajo impacto, ideal para las articulaciones.', category: 'physical', cost: 'investment', mobility: 'active' },
+            { name: 'Pintura y Dibujo', description: 'Expresión creativa que estimula el cerebro y reduce la ansiedad.', category: 'creative', cost: 'investment', mobility: 'adaptable' },
+            { name: 'Manualidades', description: 'Tejido, cerámica, etc. Mejoran la coordinación y dan un sentido de propósito.', category: 'creative', cost: 'low', mobility: 'adaptable' },
+            { name: 'Música y Canto', description: 'Aprender un instrumento o cantar en un coro mejora la función cognitiva.', category: 'creative', cost: 'investment', mobility: 'adaptable' },
+            { name: 'Cocina y Repostería', description: 'Actividad divertida y social. Explora nuevas recetas y culturas.', category: 'creative', cost: 'low', mobility: 'adaptable' },
+            { name: 'Escritura y Blogging', description: 'Permite la expresión creativa y ejercita la memoria y la concentración.', category: 'creative', cost: 'low', mobility: 'adaptable' },
+            { name: 'Papiroflexia (Origami)', description: 'Arte de bajo coste que ayuda a la concentración y la motricidad fina.', category: 'creative', cost: 'low', mobility: 'adaptable' },
+            { name: 'Lectura', description: 'Estimula el cerebro, la atención y la memoria. Accesible en bibliotecas.', category: 'mental', cost: 'low', mobility: 'adaptable' },
+            { name: 'Juegos de Mesa', description: 'Ajedrez, cartas, etc. Estimulan la mente y la interacción social.', category: 'mental', cost: 'low', mobility: 'adaptable' },
+            { name: 'Rompecabezas', description: 'Mejoran la resolución de problemas y la atención a los detalles.', category: 'mental', cost: 'low', mobility: 'adaptable' },
+            { name: 'Aprender Idiomas', description: 'Desafía al cerebro y mantiene la mente activa. Hay apps gratuitas.', category: 'mental', cost: 'low', mobility: 'adaptable' },
+            { name: 'Videojuegos', description: 'Mejoran la concentración, memoria y habilidades motoras. Opciones para socializar.', category: 'mental', cost: 'investment', mobility: 'adaptable' },
+            { name: 'Meditación', description: 'Reduce el estrés y mejora la estabilidad emocional. Apps gratuitas disponibles.', category: 'mental', cost: 'low', mobility: 'adaptable' },
+            { name: 'Voluntariado', description: 'Aporta un profundo sentido de propósito y fomenta conexiones sociales.', category: 'social', cost: 'low', mobility: 'adaptable' },
+            { name: 'Clubes de Lectura', description: 'Permite discutir temas, compartir experiencias y fomenta la comunidad.', category: 'social', cost: 'low', mobility: 'adaptable' },
+            { name: 'Actividades Grupales', description: 'Talleres, juegos o proyectos comunitarios para crear nuevos vínculos.', category: 'social', cost: 'low', mobility: 'active' },
+            { name: 'Bailar', description: 'Actividad social y física muy gratificante. Hay tutoriales online.', category: 'social', cost: 'low', mobility: 'active' }
+        ];
+
+        const resourcesData = [
+            {
+                title: 'Plataformas Online y Redes Sociales',
+                description: 'La era digital facilita la conexión con personas de intereses similares.',
+                items: [
+                    { name: 'MásVida50', url: 'https://www.masvida50.com/', desc: 'Plataforma muy completa con clubes de interés, excursiones, juegos y más.' },
+                    { name: 'Jubilonautas', url: 'http://personal.redestb.es/jo.tor/', desc: 'Página solidaria con información sobre rutas, lectura, recetas y enlaces de interés.' },
+                    { name: 'LosMayores.com', url: 'https://www.losmayores.com/', desc: 'Un espacio con actividades, talleres formativos, cultura y consejos.' },
+                    { name: 'Redmayores.org', url: 'https://www.redmayores.org/', desc: 'Dirigido por la Asociación "Edad Dorada-Mensajeros de la Paz" para mayores de 55.' }
+                ]
+            },
+            {
+                title: 'Centros y Asociaciones Nacionales',
+                description: 'Organizaciones que promueven la autonomía y participación a través de talleres y servicios.',
+                items: [
+                    { name: 'CEOMA', url: 'https://ceoma.org/', desc: 'Confederación Española de Organizaciones de Mayores. Ofrece programas formativos gratuitos.' },
+                    { name: 'Fundación "la Caixa"', url: 'https://fundacionlacaixa.org/es/personas-mayores-talleres-presenciales', desc: 'Talleres presenciales para fomentar el aprendizaje, empoderamiento y socialización.' },
+                    { name: 'Grandes Amigos', url: 'https://grandesamigos.org/', desc: 'Fundación de voluntariado que combate la soledad mediante acompañamiento y actividades.' },
+                    { name: 'Fundación Alicia y Guillermo', url: 'https://www.fundacionaliciayguillermo.com/', desc: 'Ofrece un programa diverso con talleres, charlas, excursiones y voluntariado.' }
+                ]
+            },
+            {
+                title: 'Iniciativas Locales y Comunitarias',
+                description: 'No olvides explorar las ofertas de tu ayuntamiento, centros cívicos y asociaciones de vecinos.',
+                items: [
+                    { name: 'Club de los 60 (Junta de Castilla y León)', url: 'https://serviciossociales.jcyl.es/web/es/personas-mayores/club-envejecimiento-activo.html', desc: 'Programa integral con descuentos y actividades variadas.' },
+                    { name: 'Centros de Día y Culturales', url: '#', desc: 'Busca en tu localidad. Son puntos de encuentro con teatro, danza, juegos y más.' }
+                ]
+            }
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const hobbyGrid = document.getElementById('hobby-grid');
+            const filters = document.getElementById('filters');
+            const noResults = document.getElementById('no-results');
+            const accordionContainer = document.getElementById('accordion-container');
+
+            let activeFilters = {
+                category: 'all',
+                cost: 'all',
+                mobility: 'all'
+            };
+
+            function renderHobbies() {
+                hobbyGrid.innerHTML = '';
+                let visibleCount = 0;
+                hobbiesData.forEach(hobby => {
+                    const categoryMatch = activeFilters.category === 'all' || hobby.category === activeFilters.category;
+                    const costMatch = activeFilters.cost === 'all' || hobby.cost === activeFilters.cost;
+                    const mobilityMatch = activeFilters.mobility === 'all' || hobby.mobility === activeFilters.mobility;
+
+                    if (categoryMatch && costMatch && mobilityMatch) {
+                        const card = document.createElement('div');
+                        card.className = 'hobby-card bg-white rounded-lg shadow-md p-6 border border-gray-200';
+                        card.innerHTML = `
+                            <div class="flex-grow">
+                                <h4 class="font-bold text-xl mb-2 text-teal-800">${hobby.name}</h4>
+                                <p class="text-gray-600 text-base">${hobby.description}</p>
+                            </div>
+                            <div class="mt-4 pt-4 border-t border-gray-200 flex flex-wrap gap-2 text-xs">
+                                <span class="bg-teal-100 text-teal-800 px-2 py-1 rounded-full">${hobby.category.charAt(0).toUpperCase() + hobby.category.slice(1)}</span>
+                                <span class="bg-amber-100 text-amber-800 px-2 py-1 rounded-full">${hobby.cost === 'low' ? 'Bajo Coste' : 'Inversión'}</span>
+                                <span class="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full">${hobby.mobility === 'adaptable' ? 'Adaptable' : 'Activa'}</span>
+                            </div>
+                        `;
+                        hobbyGrid.appendChild(card);
+                        visibleCount++;
+                    }
+                });
+                noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+            }
+
+            filters.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') {
+                    const button = e.target;
+                    const group = button.closest('[data-filter-group]').dataset.filterGroup;
+                    const filterValue = button.dataset.filter;
+                    
+                    activeFilters[group] = filterValue;
+
+                    button.parentElement.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+
+                    renderHobbies();
+                }
+            });
+
+            function renderResources() {
+                accordionContainer.innerHTML = resourcesData.map((group, index) => `
+                    <div class="border border-gray-200 rounded-lg bg-white shadow-sm">
+                        <h2>
+                            <button type="button" class="accordion-button flex items-center justify-between w-full p-5 font-medium text-left text-gray-700 hover:bg-gray-100 focus:ring-4 focus:ring-gray-200" data-accordion-target="accordion-content-${index}">
+                                <span>${group.title}</span>
+                                <span class="accordion-arrow">
+                                    <svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                </span>
+                            </button>
+                        </h2>
+                        <div id="accordion-content-${index}" class="accordion-content">
+                            <div class="p-5 border-t border-gray-200">
+                                <p class="mb-4 text-gray-600">${group.description}</p>
+                                <ul class="space-y-3 text-gray-600">
+                                    ${group.items.map(item => `
+                                        <li>
+                                            <a href="${item.url}" target="_blank" rel="noopener noreferrer" class="text-teal-600 hover:text-teal-800 hover:underline font-semibold">${item.name}</a>
+                                            <p class="text-sm">${item.desc}</p>
+                                        </li>
+                                    `).join('')}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            accordionContainer.addEventListener('click', (e) => {
+                const button = e.target.closest('.accordion-button');
+                if (button) {
+                    const contentId = button.getAttribute('data-accordion-target');
+                    const content = document.getElementById(contentId);
+                    const isOpen = button.classList.contains('open');
+
+                    button.classList.toggle('open', !isOpen);
+                    content.style.maxHeight = isOpen ? '0' : content.scrollHeight + 'px';
+                }
+            });
+
+            function createCharts() {
+                const categoryCounts = hobbiesData.reduce((acc, hobby) => {
+                    acc[hobby.category] = (acc[hobby.category] || 0) + 1;
+                    return acc;
+                }, {});
+                const costCounts = hobbiesData.reduce((acc, hobby) => {
+                    acc[hobby.cost] = (acc[hobby.cost] || 0) + 1;
+                    return acc;
+                }, {});
+
+                new Chart(document.getElementById('categoryChart'), {
+                    type: 'polarArea',
+                    data: {
+                        labels: Object.keys(categoryCounts).map(k => k.charAt(0).toUpperCase() + k.slice(1)),
+                        datasets: [{
+                            label: 'Nº de Hobbies',
+                            data: Object.values(categoryCounts),
+                            backgroundColor: ['rgba(15, 118, 110, 0.7)', 'rgba(245, 158, 11, 0.7)', 'rgba(79, 70, 229, 0.7)', 'rgba(219, 39, 119, 0.7)'],
+                            borderColor: ['#0d9488', '#f59e0b', '#4f46e5', '#db2777'],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: { r: { pointLabels: { font: { size: 14 } } } },
+                        plugins: { legend: { position: 'bottom' } }
+                    }
+                });
+
+                new Chart(document.getElementById('costChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: ['Bajo Coste', 'Requiere Inversión'],
+                        datasets: [{
+                            label: 'Nº de Hobbies',
+                            data: [costCounts.low, costCounts.investment],
+                            backgroundColor: ['rgba(15, 118, 110, 0.7)', 'rgba(245, 158, 11, 0.7)'],
+                            borderColor: ['#0d9488', '#f59e0b'],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: { y: { beginAtZero: true } },
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            }
+            
+            const mobileNav = document.getElementById('mobile-nav');
+            mobileNav.addEventListener('change', (e) => {
+                window.location.hash = e.target.value;
+            });
+            
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+
+            renderHobbies();
+            renderResources();
+            createCharts();
+        });
+    </script>
+</body>
+</html>

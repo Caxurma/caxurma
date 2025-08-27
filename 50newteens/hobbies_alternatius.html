@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explorador de Hobbies Inusuales para Adultos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals -->
+    <!-- Application Structure Plan: La aplicación está diseñada como un panel de control de una sola página. La sección principal es un "Explorador de Hobbies" interactivo con filtros (Categoría, Entorno, Social, Coste) que actualizan dinámicamente una cuadrícula de tarjetas de hobbies. Esto prioriza el descubrimiento por parte del usuario sobre una lectura lineal. Le sigue una sección de "Visualizaciones" con gráficos de Chart.js para resumir la distribución de los hobbies, proporcionando una visión general cuantitativa. Finalmente, una sección de "Recursos" presenta los enlaces externos de forma organizada. Esta estructura transforma el artículo estático en una herramienta de exploración atractiva y funcional. -->
+    <!-- Visualization & Content Choices: El informe es una lista de hobbies. El objetivo es organizar y comparar. Se utilizan tarjetas interactivas (HTML/CSS) para presentar cada hobby. La interacción principal es el filtrado (JS) para permitir al usuario acotar las opciones. Para resumir el conjunto de datos, se utilizan gráficos de tarta y barras (Chart.js/Canvas) para mostrar la distribución por categoría, entorno y coste. Esto permite una comparación visual rápida. Los enlaces se agrupan en una sección de recursos para no sobrecargar las tarjetas. Esta combinación de filtrado, visualización y presentación detallada bajo demanda crea una experiencia de usuario superior a la de un simple artículo. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fdfaf6;
+            color: #4a4a4a;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        h1, h2, h3 {
+            font-family: 'Playfair Display', serif;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+        .filter-btn {
+            transition: all 0.3s ease;
+        }
+        .filter-btn.active {
+            background-color: #ff7f50;
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .hobby-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .hobby-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+        }
+        .logo-text {
+            font-family: 'Pacifico', cursive;
+            color: #ff7f50;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease;
+        }
+        .logo-text:hover {
+            transform: scale(1.05);
+        }
+        .header-nav-link {
+            color: #e5e7eb;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+        .header-nav-link:hover {
+            color: #ff7f50;
+        }
+    </style>
+</head>
+<body class="antialiased bg-[#f7f7f7]">
+
+    <!-- Header, modified with 50NewTeens brand identity and dark background -->
+    <header class="bg-[#0d1e3a] shadow-md py-4 sticky top-0 z-50">
+        <nav class="container flex justify-between items-center px-6">
+            <a href="#" class="flex items-center">
+                <!-- Text-based logo using Pacifico font -->
+                <span class="logo-text">50NewTeens</span>
+            </a>
+            <div class="hidden md:flex items-center space-x-4">
+                <a href="#explorador" class="header-nav-link">Explorador</a>
+                <a href="#visualizaciones" class="header-nav-link">Visualizaciones</a>
+                <a href="#recursos" class="header-nav-link">Recursos</a>
+                <a href="#" class="bg-[#ff7f50] text-white hover:bg-[#0d47a1] px-4 py-2 rounded-full transition-colors">Contacto</a>
+            </div>
+             <div class="md:hidden">
+                <select id="mobile-nav" class="border border-gray-300 rounded-md p-2 bg-white">
+                    <option value="#explorador">Explorador</option>
+                    <option value="#visualizaciones">Visualizaciones</option>
+                    <option value="#recursos">Recursos</option>
+                </select>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section id="hero" class="py-20 bg-[#f8f5f2]">
+            <div class="container mx-auto px-6 text-center">
+                <h2 class="text-4xl md:text-5xl font-bold text-[#6d4c41] mb-4">Descubre tu Próxima Pasión</h2>
+                <p class="text-lg text-gray-700 max-w-3xl mx-auto">Más allá de lo convencional, existe un universo de aficiones esperando ser exploradas. Utiliza esta guía interactiva para encontrar un hobby que resuene contigo.</p>
+            </div>
+        </section>
+
+        <section id="explorador" class="py-16">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-bold text-[#6d4c41] mb-2">Explorador de Hobbies</h2>
+                    <p class="text-gray-600">Filtra las opciones para encontrar la actividad perfecta para ti.</p>
+                </div>
+
+                <div id="filters" class="mb-10">
+                    <div class="mb-6">
+                        <h3 class="font-semibold mb-3 text-center">Categoría</h3>
+                        <div class="flex flex-wrap justify-center gap-2 md:gap-4" data-filter-group="category">
+                            <button class="filter-btn bg-white px-4 py-2 rounded-full shadow-sm border" data-filter="all">Todos</button>
+                            <button class="filter-btn bg-white px-4 py-2 rounded-full shadow-sm border" data-filter="Creativo y Artístico">Creativo</button>
+                            <button class="filter-btn bg-white px-4 py-2 rounded-full shadow-sm border" data-filter="Aventura y Exploración">Aventura</button>
+                            <button class="filter-btn bg-white px-4 py-2 rounded-full shadow-sm border" data-filter="Deporte Alternativo">Deporte</button>
+                            <button class="filter-btn bg-white px-4 py-2 rounded-full shadow-sm border" data-filter="Intelectual">Intelectual</button>
+                            <button class="filter-btn bg-white px-4 py-2 rounded-full shadow-sm border" data-filter="Práctico y Manual">Manual</button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                        <div>
+                            <h3 class="font-semibold mb-3">Entorno</h3>
+                            <div class="flex justify-center gap-2" data-filter-group="environment">
+                                <button class="filter-btn bg-white px-4 py-2 rounded-full shadow-sm border w-28" data-filter="all">Ambos</button>
+                                <button class="filter-btn bg-white px-4 py-2 rounded-full shadow-sm border w-28" data-filter="Interior">Interior</button>
+                                <button class="filter-btn bg-white px-4 py-2 rounded-full shadow-sm border w-28" data-filter="Exterior">Exterior</button>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold mb-3">Social</h3>
+                            <div class="flex justify-center gap-2" data-filter-group="social">
+                                <button class="filter-btn bg-white px-4 py-2 rounded-full shadow-sm border w-28" data-filter="all">Ambos</button>
+                                <button class="filter-btn bg-white px-4 py-2 rounded-full shadow-sm border w-28" data-filter="Individual">Individual</button>
+                                <button class="filter-btn bg-white px-4 py-2 rounded-full shadow-sm border w-28" data-filter="Grupo">Grupo</button>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold mb-3">Coste</h3>
+                             <div class="flex justify-center gap-2" data-filter-group="cost">
+                                <button class="filter-btn bg-white px-4 py-2 rounded-full shadow-sm border w-28" data-filter="all">Todos</button>
+                                <button class="filter-btn bg-white px-4 py-2 rounded-full shadow-sm border w-28" data-filter="Bajo">Bajo</button>
+                                <button class="filter-btn bg-white px-4 py-2 rounded-full shadow-sm border w-28" data-filter="Inversión">Inversión</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="hobby-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                </div>
+                 <p id="no-results" class="hidden text-center text-gray-500 mt-8">No se encontraron hobbies que coincidan con los filtros seleccionados.</p>
+            </div>
+        </section>
+
+        <section id="visualizaciones" class="py-16 bg-[#f8f5f2]">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-bold text-[#6d4c41] mb-2">El Paisaje de los Hobbies</h2>
+                    <p class="text-gray-600">Una vista general de las aficiones presentadas en esta colección.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-center justify-center">
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-xl font-semibold text-center mb-4">Distribución por Categoría</h3>
+                        <div class="chart-container"><canvas id="categoryChart"></canvas></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-xl font-semibold text-center mb-4">Entorno de Práctica</h3>
+                        <div class="chart-container"><canvas id="environmentChart"></canvas></div>
+                    </div>
+                     <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-xl font-semibold text-center mb-4">Tipo de Interacción Social</h3>
+                        <div class="chart-container"><canvas id="socialChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="recursos" class="py-16">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-bold text-[#6d4c41] mb-2">Recursos y Enlaces</h2>
+                    <p class="text-gray-600">Explora más a fondo los hobbies que te interesan.</p>
+                </div>
+                <div id="resource-list" class="space-y-4 max-w-4xl mx-auto">
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="container flex flex-col md:flex-row justify-between items-center text-center md:text-left px-6">
+            <div class="mb-4 md:mb-0">
+                <p>&copy; 2025 50NewTeens. Todos los derechos reservados.</p>
+            </div>
+            <div class="flex space-x-4">
+                <a href="#" class="text-gray-400 hover:text-white transition-colors"><i class="fab fa-facebook-f"></i></a>
+                <a href="#" class="text-gray-400 hover:text-white transition-colors"><i class="fab fa-twitter"></i></a>
+                <a href="#" class="text-gray-400 hover:text-white transition-colors"><i class="fab fa-linkedin-in"></i></a>
+                <a href="#" class="text-gray-400 hover:text-white transition-colors"><i class="fab fa-instagram"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const hobbies = [
+            { id: 1, name: "Pirograbado", category: "Creativo y Artístico", environment: "Interior", social: "Individual", cost: "Inversión", description: "Técnica artística que consiste en dibujar sobre madera, cuero u otras superficies utilizando una punta incandescente.", peculiarity: "Llamado 'el arte de dibujar con fuego', ofrece una forma única de expresión con una sensación táctil y un acabado rústico.", links: [{title: "Wikipedia", url:"https://es.wikipedia.org/wiki/Pirograbado"}, {title: "Qué es", url:"https://www.univision.com/estilo-de-vida/asi-se-vive-mejor-hogar/que-es-el-pirograbado"}] },
+            { id: 2, name: "Lomografía", category: "Creativo y Artístico", environment: "Exterior", social: "Individual", cost: "Inversión", description: "Estilo de fotografía analógica que valora la espontaneidad y las imperfecciones visuales producidas por cámaras específicas.", peculiarity: "Rechaza la perfección digital, celebrando los colores saturados, viñeteados y distorsiones como parte de su identidad artística.", links: [{title: "Guía para principiantes", url:"https://www.lomography.es/magazine/195640-guia-para-principiantes-de-lomography-ideas-por-tipo-de-foto"}] },
+            { id: 3, name: "Danza Aérea", category: "Creativo y Artístico", environment: "Interior", social: "Grupo", cost: "Inversión", description: "Disciplina física y artística que combina acrobacias y danza suspendida en telas.", peculiarity: "Es un hobby holístico que integra un intenso desafío físico con el bienestar mental, transformando el cuerpo y la mente.", links: [{title: "Beneficios", url:"https://www.cdi.org.mx/danza-aerea-o-acrobacia-en-telas-2/"}, {title: "Transforma tu cuerpo", url:"https://infonegocios.com.py/infodeportes/acrotelas-el-deporte-aereo-que-transforma-el-cuerpo-desarrolla-la-flexibilidad-y-fortalece-la-mente"}] },
+            { id: 4, name: "Perfume Casero", category: "Creativo y Artístico", environment: "Interior", social: "Individual", cost: "Bajo", description: "Creación de fragancias personalizadas diluyendo aceites esenciales en alcohol y otros ingredientes.", peculiarity: "Va más allá del ahorro; es un acto de autoexpresión y un paso hacia un consumo más consciente y personalizado.", links: [{title: "Proceso de fabricación", url:"https://laboratoriosnatuaromatic.com/proceso-de-fabricacion-en-perfumeria/"}, {title: "Manual", url:"https://granvelada.com/blog/manual-para-hacer-perfumes/"}] },
+            { id: 5, name: "Exploración Urbana (Urbex)", category: "Aventura y Exploración", environment: "Exterior", social: "Grupo", cost: "Bajo", description: "Visita y documentación de estructuras abandonadas o de acceso restringido.", peculiarity: "A pesar de su naturaleza transgresora, se rige por un estricto código ético de 'no dejar rastro', convirtiéndolo en una forma de tutela histórica.", links: [{title: "Normas de exploración", url:"https://urbex.direct/es/normas-de-exploracion-urbana/"}, {title: "Guía de iniciación", url:"https://abandonedspain.com/guia-iniciacion-exploracion-urbana/"}] },
+            { id: 6, name: "Espeleología", category: "Aventura y Exploración", environment: "Exterior", social: "Grupo", cost: "Inversión", description: "Exploración y estudio de cuevas y cavidades subterráneas.", peculiarity: "Es una actividad intrínsecamente grupal que fomenta el trabajo en equipo y la confianza para gestionar el riesgo, creando una fuerte comunidad.", links: [{title: "Guía completa", url:"https://descensosdelsella.com/guia-completa-de-espeleologia/"}, {title: "Cómo iniciarse", url:"https://www.aipolaventura.com/blog/como-iniciarse-en-la-espeleologia/"}] },
+            { id: 7, name: "Paramotor", category: "Aventura y Exploración", environment: "Exterior", social: "Individual", cost: "Inversión", description: "Modalidad de vuelo que combina un parapente con un motor, permitiendo despegar desde casi cualquier lugar.", peculiarity: "Democratiza la experiencia de volar, haciendo la aviación personal una posibilidad real para un público más amplio, equilibrando aventura y responsabilidad.", links: [{title: "Qué es", url:"https://aventuracaminitodelrey.com/que-es-el-paramotor/"}, {title: "Licencia en España", url:"https://andflyparapente.es/licencia-paramotor-espana/"}] },
+            { id: 8, name: "Carrovela (Land Sailing)", category: "Aventura y Exploración", environment: "Exterior", social: "Individual", cost: "Inversión", description: "Navegación terrestre en vehículos impulsados por el viento sobre grandes superficies planas.", peculiarity: "Es un deporte notablemente inclusivo, que no requiere adaptaciones específicas para personas con discapacidad.", links: [{title: "Hobby y Afición", url:"https://www.hobbyaficion.com/hobby/carrovela-blokart/"}, {title: "Manual de Carrovelismo", url:"https://cocemfecyl.es/wp-content/uploads/2020/07/MANUAL%20DE%20CARROVELISMO%20%28Cocemfe%29.pdf"}] },
+            { id: 9, name: "Colpbol", category: "Deporte Alternativo", environment: "Interior", social: "Grupo", cost: "Bajo", description: "Deporte de equipo mixto donde la pelota se golpea con las manos, y nadie puede tocarla dos veces seguidas.", peculiarity: "Fue diseñado para ser obligatoriamente mixto e inclusivo, utilizando sus reglas para promover activamente la igualdad y la cooperación.", links: [{title: "Reglamento", url:"https://www.colpbol.es/wp-content/uploads/2023/03/Reglament-Oficial-Colpbol%C2%A9-1.pdf"}, {title: "Información", url:"https://carloslopezmartinez.com/juegos-y-deportes-alternativos-para-educacion-fisica/"}] },
+            { id: 10, name: "Pickleball", category: "Deporte Alternativo", environment: "Exterior", social: "Grupo", cost: "Bajo", description: "Deporte de raqueta que fusiona elementos del tenis, bádminton y ping-pong.", peculiarity: "Su naturaleza híbrida permite a los jugadores de otros deportes de raqueta aprender rápidamente, haciéndolo extremadamente accesible y social.", links: [{title: "Reglas del juego", url:"https://volair.com/es/blogs/news/pickleball-game-rules-guidelines"}] },
+            { id: 11, name: "Calistenia", category: "Deporte Alternativo", environment: "Exterior", social: "Individual", cost: "Bajo", description: "Entrenamiento físico que utiliza el propio peso corporal para desarrollar fuerza y flexibilidad.", peculiarity: "Su accesibilidad y mínima necesidad de equipo lo convierten en un 'gimnasio' democrático y al aire libre.", links: [{title: "Hobby y Afición", url:"https://www.hobbyaficion.com/lista-de-hobbies-aburrimiento/"}] },
+            { id: 12, name: "Genealogía", category: "Intelectual", environment: "Interior", social: "Individual", cost: "Bajo", description: "Estudio de los linajes y la historia familiar a través de la investigación de archivos y registros.", peculiarity: "Es una búsqueda de autoconocimiento que conecta lo personal con la gran historia, convirtiendo al aficionado en un detective de su propio pasado.", links: [{title: "Hobby y Afición", url:"https://www.hobbyaficion.com/lista-de-hobbies-aburrimiento/"}] },
+            { id: 13, name: "Lock Picking", category: "Intelectual", environment: "Interior", social: "Individual", cost: "Bajo", description: "Arte de abrir cerraduras sin llave como un desafío mental y de destreza (con fines recreativos).", peculiarity: "Es una forma de meditación activa que agudiza la mente, la paciencia y la coordinación a través de la resolución de un puzzle mecánico y táctil.", links: [{title: "Hobby y Afición", url:"https://www.hobbyaficion.com/lista-de-hobbies-aburrimiento/"}] },
+            { id: 14, name: "Hidroponía", category: "Práctico y Manual", environment: "Interior", social: "Individual", cost: "Inversión", description: "Método de cultivo de plantas sin tierra, utilizando soluciones minerales en agua.", peculiarity: "Representa una fusión de jardinería y ciencia, permitiendo cultivar alimentos de forma sostenible y controlada en espacios urbanos reducidos.", links: [{title: "Hobby y Afición", url:"https://www.hobbyaficion.com/lista-de-hobbies-aburrimiento/"}] },
+            { id: 15, name: "Detailing de Automóviles", category: "Práctico y Manual", environment: "Exterior", social: "Individual", cost: "Inversión", description: "Proceso meticuloso de limpieza, restauración y acabado de un vehículo para llevarlo a un estado de exhibición.", peculiarity: "Es una actividad terapéutica que eleva la limpieza a una forma de arte, centrada en la perfección y la atención al detalle.", links: [{title: "Hobby y Afición", url:"https://www.hobbyaficion.com/lista-de-hobbies-aburrimiento/"}] }
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const hobbyGrid = document.getElementById('hobby-grid');
+            const resourceList = document.getElementById('resource-list');
+            const filtersContainer = document.getElementById('filters');
+            const noResultsMessage = document.getElementById('no-results');
+
+            let currentFilters = {
+                category: 'all',
+                environment: 'all',
+                social: 'all',
+                cost: 'all'
+            };
+
+            const renderHobbies = () => {
+                const filteredHobbies = hobbies.filter(hobby => {
+                    return (currentFilters.category === 'all' || hobby.category === currentFilters.category) &&
+                           (currentFilters.environment === 'all' || hobby.environment === currentFilters.environment) &&
+                           (currentFilters.social === 'all' || hobby.social === currentFilters.social) &&
+                           (currentFilters.cost === 'all' || hobby.cost === currentFilters.cost);
+                });
+
+                hobbyGrid.innerHTML = '';
+                if (filteredHobbies.length === 0) {
+                    noResultsMessage.classList.remove('hidden');
+                } else {
+                    noResultsMessage.classList.add('hidden');
+                    filteredHobbies.forEach(hobby => {
+                        const card = document.createElement('div');
+                        card.className = 'hobby-card bg-white rounded-lg shadow-md overflow-hidden flex flex-col';
+                        card.innerHTML = `
+                            <div class="p-6 flex-grow">
+                                <p class="text-sm text-[#ff7f50] font-semibold">${hobby.category}</p>
+                                <h3 class="text-2xl font-bold text-gray-800 mt-1 mb-2">${hobby.name}</h3>
+                                <p class="text-gray-600 mb-4 text-sm">${hobby.description}</p>
+                                <p class="text-sm text-gray-800 bg-[#f8f5f2] p-3 rounded-md"><strong class="font-semibold">Peculiaridad:</strong> ${hobby.peculiarity}</p>
+                            </div>
+                            <div class="p-4 bg-gray-50 flex justify-between items-center text-xs text-gray-500">
+                                <span>${hobby.environment} | ${hobby.social}</span>
+                                <span class="font-semibold py-1 px-3 rounded-full ${hobby.cost === 'Bajo' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">${hobby.cost}</span>
+                            </div>
+                        `;
+                        hobbyGrid.appendChild(card);
+                    });
+                }
+            };
+
+            const renderResources = () => {
+                resourceList.innerHTML = '';
+                hobbies.forEach(hobby => {
+                    const resourceItem = document.createElement('div');
+                    resourceItem.className = 'bg-white rounded-lg shadow-sm border border-gray-200';
+                    const linksHTML = hobby.links.map(link => `<a href="${link.url}" target="_blank" rel="noopener noreferrer" class="block text-blue-600 hover:underline">${link.title}</a>`).join('');
+                    resourceItem.innerHTML = `
+                        <details>
+                            <summary class="p-4 font-semibold cursor-pointer text-lg text-gray-700">${hobby.name}</summary>
+                            <div class="p-4 border-t border-gray-200">
+                                ${linksHTML}
+                            </div>
+                        </details>
+                    `;
+                    resourceList.appendChild(resourceItem);
+                });
+            };
+
+            filtersContainer.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') {
+                    const group = e.target.parentElement.dataset.filterGroup;
+                    const value = e.target.dataset.filter;
+
+                    currentFilters[group] = value;
+
+                    e.target.parentElement.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+                    e.target.classList.add('active');
+
+                    renderHobbies();
+                }
+            });
+
+            const createCharts = () => {
+                const categoryCounts = hobbies.reduce((acc, hobby) => {
+                    acc[hobby.category] = (acc[hobby.category] || 0) + 1;
+                    return acc;
+                }, {});
+
+                const environmentCounts = hobbies.reduce((acc, hobby) => {
+                    acc[hobby.environment] = (acc[hobby.environment] || 0) + 1;
+                    return acc;
+                }, {});
+
+                const socialCounts = hobbies.reduce((acc, hobby) => {
+                    acc[hobby.social] = (acc[hobby.social] || 0) + 1;
+                    return acc;
+                }, {});
+
+                new Chart(document.getElementById('categoryChart'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(categoryCounts),
+                        datasets: [{
+                            data: Object.values(categoryCounts),
+                            backgroundColor: ['#ff7f50', '#ff9f75', '#ffbf9a', '#ffd2b4', '#ffe5d0'],
+                            borderColor: '#ffffff',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                });
+
+                new Chart(document.getElementById('environmentChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(environmentCounts),
+                        datasets: [{
+                            label: 'Nº de Hobbies',
+                            data: Object.values(environmentCounts),
+                            backgroundColor: ['#ff9f75', '#ffd2b4'],
+                            borderRadius: 4
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false } } }
+                });
+
+                 new Chart(document.getElementById('socialChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(socialCounts),
+                        datasets: [{
+                            label: 'Nº de Hobbies',
+                            data: Object.values(socialCounts),
+                            backgroundColor: ['#ff7f50', '#ffbf9a'],
+                            borderRadius: 4
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false } } }
+                });
+            };
+
+            const mobileNav = document.getElementById('mobile-nav');
+            mobileNav.addEventListener('change', (e) => {
+                const targetId = e.target.value;
+                document.querySelector(targetId).scrollIntoView({ behavior: 'smooth' });
+            });
+
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({ behavior: 'smooth' });
+                });
+            });
+
+            document.querySelector('[data-filter-group="category"] [data-filter="all"]').classList.add('active');
+            document.querySelector('[data-filter-group="environment"] [data-filter="all"]').classList.add('active');
+            document.querySelector('[data-filter-group="social"] [data-filter="all"]').classList.add('active');
+            document.querySelector('[data-filter-group="cost"] [data-filter="all"]').classList.add('active');
+
+            renderHobbies();
+            renderResources();
+            createCharts();
+        });
+    </script>
+</body>
+</html>
