@@ -1,6 +1,87 @@
 <!DOCTYPE html>
 <html lang="es" class="scroll-smooth">
 <head>
+    <!-- Banner Modal de Cookies -->
+<div id="cookie-modal" style="
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 500px;
+  width: 90%;
+  background-color: #fff;
+  color: #222;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  font-family: Arial, sans-serif;
+  z-index: 10000;
+  display: none;
+  text-align: center;
+">
+  <p style="margin-bottom: 15px;">
+    Este sitio utiliza cookies para mejorar tu experiencia. Puedes aceptar o rechazar su uso.
+  </p>
+  <button id="accept-cookies" style="
+    padding: 8px 16px;
+    margin-right: 10px;
+    border: none;
+    background-color: #27ae60;
+    color: #fff;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+  ">Aceptar</button>
+  <button id="reject-cookies" style="
+    padding: 8px 16px;
+    border: none;
+    background-color: #c0392b;
+    color: #fff;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+  ">Rechazar</button>
+</div>
+
+<script>
+  // Mostrar modal si no hay decisión
+  if (!localStorage.getItem('cookies_decision')) {
+    document.getElementById('cookie-modal').style.display = 'block';
+  } else if(localStorage.getItem('cookies_decision') === 'accepted') {
+    loadGA();
+  }
+
+  // Aceptar cookies
+  document.getElementById('accept-cookies').addEventListener('click', function () {
+    localStorage.setItem('cookies_decision', 'accepted');
+    document.getElementById('cookie-modal').style.display = 'none';
+    loadGA();
+  });
+
+  // Rechazar cookies
+  document.getElementById('reject-cookies').addEventListener('click', function () {
+    localStorage.setItem('cookies_decision', 'rejected');
+    document.getElementById('cookie-modal').style.display = 'none';
+  });
+
+  // Función para cargar Google Analytics
+  function loadGA(){
+    // Inyectar el script de GA4 de forma dinámica
+    var gtagScript = document.createElement('script');
+    gtagScript.async = true;
+    gtagScript.src = "https://www.googletagmanager.com/gtag/js?id=G-PVF6YKH443";
+    document.head.appendChild(gtagScript);
+
+    gtagScript.onload = function(){
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      // Configuración con IP anonimizada para GDPR
+      gtag('config', 'G-PVF6YKH443', { anonymize_ip: true });
+    }
+  }
+</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Explorador de Hobbies Inusuales para Adultos</title>
@@ -390,3 +471,4 @@
     </script>
 </body>
 </html>
+
